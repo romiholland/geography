@@ -28,7 +28,7 @@ function WorldMap({ width, height }: { width: number; height: number }) {
     () => citiesJson.find((c) => c.city === centerCity)!.coordinates,
     [centerCity],
   );
-  const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
+  const [selectedDistance, setSelectedDistance] = useState<number | null>(6000);
   const [hoveredCity, setHoveredCity] = useState<CityName | null>(null);
   const hoveredCityCoords = useMemo(
     () => citiesJson.find((c) => c.city === hoveredCity)?.coordinates,
