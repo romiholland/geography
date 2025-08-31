@@ -18,20 +18,18 @@ const countriesGeoJson = feature(
   countriesTopoJson.objects.countries as any,
 );
 
+type CityName = (typeof citiesJson)[number]["city"];
 // const EARTH_RADIUS_MILES = 3963;
 const EARTH_CIRCUMFERENCE_MILES = 24901;
 
 function WorldMap({ width, height }: { width: number; height: number }) {
-  const [centerCity, setCenterCity] =
-    useState<(typeof citiesJson)[number]["city"]>("New York City");
+  const [centerCity, setCenterCity] = useState<CityName>("New York City");
   const center = useMemo(
     () => citiesJson.find((c) => c.city === centerCity)!.coordinates,
     [centerCity],
   );
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
-  const [hoveredCity, setHoveredCity] = useState<
-    (typeof citiesJson)[number]["city"] | null
-  >();
+  const [hoveredCity, setHoveredCity] = useState<CityName | null>(null);
   const hoveredCityCoords = useMemo(
     () => citiesJson.find((c) => c.city === hoveredCity)?.coordinates,
     [hoveredCity],
@@ -230,99 +228,117 @@ function WorldMap({ width, height }: { width: number; height: number }) {
   );
 
   return (
-    <svg
-      width={width}
-      height={height}
-      onMouseDown={startPan}
-      onMouseMove={handlePan}
-      onMouseUp={endPan}
-      onWheel={handleScale}
-      cursor={currentPan ? "grabbing" : "grab"}
-    >
-      <g
-        transform={`translate(${translate.x + (currentPan?.dx || 0)},${translate.y + (currentPan?.dy || 0)}) scale(${scale})`}
+    <div>
+      <div className={styles.centerCity}>
+        Center City:{" "}
+        <select
+          value={centerCity}
+          onChange={(e) => {
+            setCenterCity(e.target.value as CityName);
+          }}
+        >
+          {citiesJson.map((v) => (
+            <option key={v.city} value={v.city}>
+              {v.city}
+            </option>
+          ))}
+        </select>
+      </div>
+      <svg
+        width={width}
+        height={height}
+        onMouseDown={startPan}
+        onMouseMove={handlePan}
+        onMouseUp={endPan}
+        onWheel={handleScale}
+        cursor={currentPan ? "grabbing" : "grab"}
       >
-        <g>
-          <path className={styles.ocean} d={ocean} />
-          <path className={styles.countries} d={countriesPath} />
-        </g>
-        <g>
-          {distanceCircles.map(({ path, distance, labelPoint }) => {
-            return (
-              <g
-                className={cn(styles.distanceCircle, {
-                  [styles.active]: distance === selectedDistance,
-                })}
-                key={distance}
-              >
-                <path d={path} />
-                <text
-                  x={labelPoint[0]}
-                  y={labelPoint[1] - 8 / Math.max(5, scale)}
-                  fontSize={20 / Math.max(5, scale)}
-                  onClick={() =>
-                    distance !== selectedDistance
-                      ? setSelectedDistance(distance)
-                      : setSelectedDistance(null)
-                  }
+        <g
+          transform={`translate(${translate.x + (currentPan?.dx || 0)},${translate.y + (currentPan?.dy || 0)}) scale(${scale})`}
+        >
+          <g>
+            <path className={styles.ocean} d={ocean} />
+            <path className={styles.countries} d={countriesPath} />
+          </g>
+          <g>
+            {distanceCircles.map(({ path, distance, labelPoint }) => {
+              return (
+                <g
+                  className={cn(styles.distanceCircle, {
+                    [styles.active]: distance === selectedDistance,
+                  })}
+                  key={distance}
                 >
-                  {distance.toLocaleString()} Miles
-                </text>
-              </g>
-            );
-          })}
-        </g>
-        <g>
-          {radiatingPaths.longitudes.map(({ path, longitude }) => {
-            return (
-              <g className={styles.radiatingPath} key={longitude}>
-                <path d={path} />
-              </g>
-            );
-          })}
-          {radiatingPaths.latitudes.map(({ path, latitude }) => {
-            return (
-              <g className={styles.radiatingPath} key={latitude}>
-                <path d={path} />
-              </g>
-            );
-          })}
-        </g>
-        <g>
-          {cities.map(({ city, cx, cy }) => {
-            const active = centerCity === city;
-            const circleScale = (active ? 18 : 10) / Math.max(5, scale);
-            return (
-              <g
-                key={city}
-                className={cn(styles.cityPoint, {
-                  [styles.active]: active,
-                })}
-                onClick={() => setCenterCity(city)}
-                onMouseEnter={() => setHoveredCity(city)}
-                onMouseLeave={() => setHoveredCity(null)}
-              >
-                <circle cx={cx} cy={cy} r={circleScale} />
-                <g transform={`translate(${1.75 * circleScale}, 0)`}>
+                  <path d={path} />
                   <text
-                    x={cx}
-                    y={cy}
-                    fontSize={(active ? 35 : 20) / Math.max(5, scale)}
+                    x={labelPoint[0]}
+                    y={labelPoint[1] - 8 / Math.max(5, scale)}
+                    fontSize={20 / Math.max(5, scale)}
+                    onClick={() =>
+                      distance !== selectedDistance
+                        ? setSelectedDistance(distance)
+                        : setSelectedDistance(null)
+                    }
                   >
-                    {city}
+                    {distance.toLocaleString()} Miles
                   </text>
                 </g>
-              </g>
-            );
-          })}
-        </g>
-        {hoveredCityPath && (
-          <g className={styles.hoveredCityPath}>
-            <path d={hoveredCityPath} />
+              );
+            })}
           </g>
-        )}
-      </g>
-    </svg>
+          <g>
+            {radiatingPaths.longitudes.map(({ path, longitude }) => {
+              return (
+                <g className={styles.radiatingPath} key={longitude}>
+                  <path d={path} />
+                </g>
+              );
+            })}
+            {radiatingPaths.latitudes.map(({ path, latitude }) => {
+              return (
+                <g className={styles.radiatingPath} key={latitude}>
+                  <path d={path} />
+                </g>
+              );
+            })}
+          </g>
+          <g>
+            {cities.map(({ city, cx, cy }) => {
+              const active = centerCity === city;
+              const circleScale = (active ? 18 : 10) / Math.max(5, scale);
+              return (
+                <g
+                  key={city}
+                  className={cn(styles.cityPoint, {
+                    [styles.active]: active,
+                    [styles.hoveredCity]: hoveredCity === city,
+                  })}
+                  onClick={() => setCenterCity(city)}
+                  onMouseEnter={() => setHoveredCity(city)}
+                  onMouseLeave={() => setHoveredCity(null)}
+                >
+                  <circle cx={cx} cy={cy} r={circleScale} />
+                  <g transform={`translate(${1.75 * circleScale}, 0)`}>
+                    <text
+                      x={cx}
+                      y={cy}
+                      fontSize={(active ? 35 : 20) / Math.max(5, scale)}
+                    >
+                      {city}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+          </g>
+          {hoveredCityPath && (
+            <g className={styles.hoveredCityPath}>
+              <path d={hoveredCityPath} />
+            </g>
+          )}
+        </g>
+      </svg>
+    </div>
   );
 }
 
