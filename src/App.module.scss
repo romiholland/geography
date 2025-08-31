@@ -72,3 +72,12 @@
   stroke-width: 0.5;
   stroke-opacity: 0.25;
 }
+
+.hoveredCityPath {
+  path {
+    fill: none;
+    stroke: #444;
+    stroke-width: 1;
+    stroke-opacity: 0.5;
+  }
+}

@@ -29,6 +29,13 @@ function WorldMap({ width, height }: { width: number; height: number }) {
     [centerCity],
   );
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
+  const [hoveredCity, setHoveredCity] = useState<
+    (typeof citiesJson)[number]["city"] | null
+  >();
+  const hoveredCityCoords = useMemo(
+    () => citiesJson.find((c) => c.city === hoveredCity)?.coordinates,
+    [hoveredCity],
+  );
 
   const geoToSvgCoords = useMemo(
     () =>
@@ -131,8 +138,17 @@ function WorldMap({ width, height }: { width: number; height: number }) {
         latitude: lat,
       })),
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geoPathToSvgPath, center]);
+  }, [geoPathToSvgPath]);
+
+  const hoveredCityPath = useMemo(
+    () =>
+      hoveredCityCoords
+        ? geoPathToSvgPath(
+            turf.lineChunk(turf.lineString([center, hoveredCityCoords]), 15),
+          )
+        : null,
+    [center, hoveredCityCoords, geoPathToSvgPath],
+  );
 
   const ocean = useMemo(
     () =>
@@ -278,23 +294,20 @@ function WorldMap({ width, height }: { width: number; height: number }) {
             const circleScale = (active ? 18 : 10) / Math.max(5, scale);
             return (
               <g
+                key={city}
                 className={cn(styles.cityPoint, {
                   [styles.active]: active,
                 })}
+                onClick={() => setCenterCity(city)}
+                onMouseEnter={() => setHoveredCity(city)}
+                onMouseLeave={() => setHoveredCity(null)}
               >
-                <circle
-                  key={city}
-                  cx={cx}
-                  cy={cy}
-                  r={circleScale}
-                  onClick={() => setCenterCity(city)}
-                />
+                <circle cx={cx} cy={cy} r={circleScale} />
                 <g transform={`translate(${1.75 * circleScale}, 0)`}>
                   <text
                     x={cx}
                     y={cy}
                     fontSize={(active ? 35 : 20) / Math.max(5, scale)}
-                    onClick={() => setCenterCity(city)}
                   >
                     {city}
                   </text>
@@ -303,6 +316,11 @@ function WorldMap({ width, height }: { width: number; height: number }) {
             );
           })}
         </g>
+        {hoveredCityPath && (
+          <g className={styles.hoveredCityPath}>
+            <path d={hoveredCityPath} />
+          </g>
+        )}
       </g>
     </svg>
   );
