@@ -4,6 +4,7 @@ import React, {
   useState,
   MouseEvent,
   WheelEvent,
+  Fragment,
 } from "react";
 import styles from "./App.module.scss";
 // We use topojson here because it's much more compact than geojson
@@ -24,8 +25,12 @@ const EARTH_CIRCUMFERENCE_MILES = 24901;
 
 function WorldMap({ width, height }: { width: number; height: number }) {
   const [centerCity, setCenterCity] = useState<CityName>("New York City");
-  const center = useMemo(
+  const centerCoords = useMemo(
     () => citiesJson.find((c) => c.city === centerCity)!.coordinates,
+    [centerCity],
+  );
+  const connectedAirports = useMemo(
+    () => citiesJson.find((c) => c.city === centerCity)!.connectedAirports,
     [centerCity],
   );
   const [selectedDistance, setSelectedDistance] = useState<number | null>(6000);
@@ -38,10 +43,10 @@ function WorldMap({ width, height }: { width: number; height: number }) {
   const geoToSvgCoords = useMemo(
     () =>
       geoAzimuthalEquidistant()
-        .rotate([-center[0], -center[1]])
+        .rotate([-centerCoords[0], -centerCoords[1]])
         .scale(Math.min(width, height) / 6.5)
         .translate([width / 2, height / 2]),
-    [center, width, height],
+    [centerCoords, width, height],
   );
 
   const geoPathToSvgPath = useMemo(
@@ -67,19 +72,19 @@ function WorldMap({ width, height }: { width: number; height: number }) {
     return distances.map((distance) => ({
       path:
         geoPathToSvgPath(
-          turf.circle(center, distance, {
+          turf.circle(centerCoords, distance, {
             steps: 360,
             units: "miles",
           }),
         ) || "",
       labelPoint: geoToSvgCoords(
-        turf.destination(center, distance, 0, { units: "miles" }).geometry
+        turf.destination(centerCoords, distance, 0, { units: "miles" }).geometry
           .coordinates as [number, number],
       )!,
       distance,
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geoPathToSvgPath, center]);
+  }, [geoPathToSvgPath, centerCoords]);
 
   const radiatingPaths = useMemo(() => {
     const angles: number[] = [];
@@ -142,10 +147,13 @@ function WorldMap({ width, height }: { width: number; height: number }) {
     () =>
       hoveredCityCoords
         ? geoPathToSvgPath(
-            turf.lineChunk(turf.lineString([center, hoveredCityCoords]), 15),
+            turf.lineChunk(
+              turf.lineString([centerCoords, hoveredCityCoords]),
+              15,
+            ),
           )
         : null,
-    [center, hoveredCityCoords, geoPathToSvgPath],
+    [centerCoords, hoveredCityCoords, geoPathToSvgPath],
   );
 
   const ocean = useMemo(
@@ -162,15 +170,23 @@ function WorldMap({ width, height }: { width: number; height: number }) {
 
   const cities = useMemo(
     () =>
-      citiesJson.map(({ city, coordinates }) => {
+      citiesJson.map(({ city, coordinates, airportCodes }) => {
         const svgCoords = geoToSvgCoords(coordinates);
+        const path = geoPathToSvgPath(
+          turf.lineChunk(turf.lineString([centerCoords, coordinates]), 15),
+        );
         return {
           city,
           cx: svgCoords![0],
           cy: svgCoords![1],
+          connectingPath: airportCodes.some((code) =>
+            connectedAirports.includes(code),
+          )
+            ? path
+            : null,
         };
       }),
-    [geoToSvgCoords],
+    [geoToSvgCoords, geoPathToSvgPath, connectedAirports, centerCoords],
   );
 
   const [currentPan, setCurrentPan] = useState<{
@@ -211,7 +227,7 @@ function WorldMap({ width, height }: { width: number; height: number }) {
   const handleScale = useCallback(
     (e: WheelEvent<SVGElement>) => {
       const rawZoomFactor = e.deltaY > 0 ? 0.8 : 1.2;
-      const newScale = Math.max(0, Math.min(20, scale * rawZoomFactor), 0.75);
+      const newScale = Math.max(0, Math.min(20, scale * rawZoomFactor), 0.01);
       const zoomFactor = newScale / scale;
 
       const svgRect = e.currentTarget.getBoundingClientRect();
@@ -303,7 +319,16 @@ function WorldMap({ width, height }: { width: number; height: number }) {
             })}
           </g>
           <g>
-            {cities.map(({ city, cx, cy }) => {
+            {cities.map(({ city, connectingPath }) => (
+              <Fragment key={city}>
+                {connectingPath && (
+                  <path d={connectingPath} className={styles.connectingPath} />
+                )}
+              </Fragment>
+            ))}
+          </g>
+          <g>
+            {cities.map(({ city, cx, cy, connectingPath }) => {
               const active = centerCity === city;
               const circleScale = (active ? 18 : 10) / Math.max(5, scale);
               return (
@@ -312,6 +337,7 @@ function WorldMap({ width, height }: { width: number; height: number }) {
                   className={cn(styles.cityPoint, {
                     [styles.active]: active,
                     [styles.hoveredCity]: hoveredCity === city,
+                    [styles.connected]: !!connectingPath,
                   })}
                   onClick={() => setCenterCity(city)}
                   onMouseEnter={() => setHoveredCity(city)}

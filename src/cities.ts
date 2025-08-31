@@ -1,3 +1,5 @@
+import citiesAugmented from "./citiesAugmented.json";
+
 const cities = [
   // North America
   {
@@ -408,4 +410,13 @@ type DeepMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
 };
 
-export default cities as DeepMutable<typeof cities>;
+const citiesWithAirports = cities.map((city) => {
+  const augCity = citiesAugmented.find((v) => v.city === city.city);
+  return {
+    ...city,
+    airportCodes: augCity?.airportCodes || [],
+    connectedAirports: augCity?.connectedAirports || [],
+  };
+});
+
+export default citiesWithAirports as DeepMutable<typeof citiesWithAirports>;

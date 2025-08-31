@@ -59,7 +59,8 @@
 
 .cityPoint {
   circle {
-    fill: #2f4444;
+    fill: darkred;
+    opacity: 0.5;
   }
 
   text {
@@ -67,19 +68,33 @@
     cursor: pointer;
   }
 
+  &.connected circle {
+    fill: black;
+    opacity: 1;
+  }
+
   &.hoveredCity circle {
     fill: #963767;
     cursor: pointer;
+    opacity: 1;
   }
 
   &.active {
     circle {
       fill: #963767;
+      opacity: 1;
     }
     text {
       font-weight: bold;
     }
   }
+}
+
+.connectingPath {
+  fill: none;
+  stroke: #01015b;
+  stroke-width: 0.25;
+  stroke-opacity: 0.2;
 }
 
 .radiatingPath {
