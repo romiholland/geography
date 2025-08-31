@@ -1,0 +1,74 @@
+.App {
+  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.ocean {
+  fill: #f2fffe;
+}
+
+.countries {
+  fill: #f5deb3;
+  stroke: #999;
+  stroke-width: 0.5px;
+}
+
+.distanceCircle {
+  text-anchor: middle;
+  fill: darkred;
+  opacity: 0.5;
+  font-weight: bold;
+
+  path {
+    fill: none;
+    //stroke: #888;
+    stroke: darkred;
+    stroke-width: 0.5;
+    stroke-opacity: 0.5;
+  }
+
+  text {
+    cursor: pointer;
+  }
+}
+
+.distanceCircle.active {
+  path {
+    stroke: darkred;
+    stroke-width: 2.5;
+  }
+}
+
+.cityPoint {
+  circle {
+    fill: #2f4444;
+
+    &:hover {
+      fill: #963767;
+      cursor: pointer;
+    }
+  }
+
+  text {
+    alignment-baseline: middle;
+    cursor: pointer;
+  }
+
+  &.active {
+    circle {
+      fill: #963767;
+    }
+    text {
+      font-weight: bold;
+    }
+  }
+}
+
+.radiatingPath {
+  fill: none;
+  stroke: #aaa;
+  stroke-width: 0.5;
+  stroke-opacity: 0.25;
+}
