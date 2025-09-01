@@ -274,7 +274,11 @@ function WorldMap({ width, height }: { width: number; height: number }) {
         >
           <g>
             <path className={styles.ocean} d={ocean} />
-            <path className={styles.countries} d={countriesPath} />
+            <path
+              className={styles.countries}
+              d={countriesPath}
+              strokeWidth={1.5 / Math.max(scale, 3)}
+            />
           </g>
           <g>
             {distanceCircles.map(({ path, distance, labelPoint }) => {
